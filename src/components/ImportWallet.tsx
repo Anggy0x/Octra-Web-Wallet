@@ -81,10 +81,12 @@ export function ImportWallet({ onWalletImported }: ImportWalletProps) {
   return (
     <div className="space-y-4">
       <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
-          Only import wallets from trusted sources. Never share your private key or mnemonic phrase with anyone.
-        </AlertDescription>
+        <div className="flex items-start space-x-3">
+          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <AlertDescription>
+            Only import wallets from trusted sources. Never share your private key or mnemonic phrase with anyone.
+          </AlertDescription>
+        </div>
       </Alert>
 
       <Tabs defaultValue="private-key" className="w-full">
