@@ -95,3 +95,156 @@ export async function generateWalletFromMnemonic(mnemonic: string) {
     nonce: 0
   };
 }
+
+// New encryption functions for private balance
+export function deriveEncryptionKey(privkeyB64: string): Uint8Array {
+  const privkeyBytes = base64ToBuffer(privkeyB64);
+  const salt = new TextEncoder().encode("octra_encrypted_balance_v2");
+  
+  // Create a combined buffer
+  const combined = new Uint8Array(salt.length + privkeyBytes.length);
+  combined.set(salt);
+  combined.set(privkeyBytes, salt.length);
+  
+  // Use crypto.subtle.digest to create SHA-256 hash
+  return crypto.subtle.digest('SHA-256', combined).then(hash => {
+    return new Uint8Array(hash).slice(0, 32);
+  }) as any; // This will be awaited where used
+}
+
+export async function encryptClientBalance(balance: number, privkeyB64: string): Promise<string> {
+  const key = await deriveEncryptionKey(privkeyB64);
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(balance.toString());
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce },
+    cryptoKey,
+    plaintext
+  );
+  
+  const combined = new Uint8Array(nonce.length + ciphertext.byteLength);
+  combined.set(nonce);
+  combined.set(new Uint8Array(ciphertext), nonce.length);
+  
+  return "v2|" + bufferToBase64(Buffer.from(combined));
+}
+
+export async function decryptClientBalance(encryptedData: string, privkeyB64: string): Promise<number> {
+  if (encryptedData === "0" || !encryptedData) {
+    return 0;
+  }
+  
+  if (!encryptedData.startsWith("v2|")) {
+    // Handle v1 format (legacy)
+    return 0; // For now, return 0 for v1 format
+  }
+  
+  try {
+    const b64Data = encryptedData.slice(3);
+    const raw = base64ToBuffer(b64Data);
+    
+    if (raw.length < 28) {
+      return 0;
+    }
+    
+    const nonce = raw.slice(0, 12);
+    const ciphertext = raw.slice(12);
+    
+    const key = await deriveEncryptionKey(privkeyB64);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce },
+      cryptoKey,
+      ciphertext
+    );
+    
+    return parseInt(new TextDecoder().decode(plaintext));
+  } catch {
+    return 0;
+  }
+}
+
+// Functions for private transfers
+export async function deriveSharedSecretForClaim(myPrivkeyB64: string, ephemeralPubkeyB64: string): Promise<Uint8Array> {
+  const sk = nacl.sign.keyPair.fromSecretKey(base64ToBuffer(myPrivkeyB64 + '='.repeat(4 - myPrivkeyB64.length % 4)));
+  const myPubkeyBytes = sk.publicKey;
+  const ephPubBytes = base64ToBuffer(ephemeralPubkeyB64);
+  
+  let smaller: Uint8Array, larger: Uint8Array;
+  
+  // Compare bytes to determine order
+  const comparison = Buffer.compare(Buffer.from(ephPubBytes), Buffer.from(myPubkeyBytes));
+  if (comparison < 0) {
+    smaller = ephPubBytes;
+    larger = myPubkeyBytes;
+  } else {
+    smaller = myPubkeyBytes;
+    larger = ephPubBytes;
+  }
+  
+  const combined = new Uint8Array(smaller.length + larger.length);
+  combined.set(smaller);
+  combined.set(larger, smaller.length);
+  
+  const round1 = await crypto.subtle.digest('SHA-256', combined);
+  const round1Array = new Uint8Array(round1);
+  
+  const suffix = new TextEncoder().encode("OCTRA_SYMMETRIC_V1");
+  const round2Input = new Uint8Array(round1Array.length + suffix.length);
+  round2Input.set(round1Array);
+  round2Input.set(suffix, round1Array.length);
+  
+  const round2 = await crypto.subtle.digest('SHA-256', round2Input);
+  return new Uint8Array(round2).slice(0, 32);
+}
+
+export async function decryptPrivateAmount(encryptedData: string, sharedSecret: Uint8Array): Promise<number | null> {
+  if (!encryptedData || !encryptedData.startsWith("v2|")) {
+    return null;
+  }
+  
+  try {
+    const raw = base64ToBuffer(encryptedData.slice(3));
+    if (raw.length < 28) {
+      return null;
+    }
+    
+    const nonce = raw.slice(0, 12);
+    const ciphertext = raw.slice(12);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      sharedSecret,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce },
+      cryptoKey,
+      ciphertext
+    );
+    
+    return parseInt(new TextDecoder().decode(plaintext));
+  } catch {
+    return null;
+  }
+}

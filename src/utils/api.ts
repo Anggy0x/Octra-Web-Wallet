@@ -1,5 +1,6 @@
 // api.ts
-import { BalanceResponse, Transaction, AddressHistoryResponse, TransactionDetails, PendingTransaction, StagingResponse } from '../types/wallet';
+import { BalanceResponse, Transaction, AddressHistoryResponse, TransactionDetails, PendingTransaction, StagingResponse, EncryptedBalanceResponse, PendingPrivateTransfer, PrivateTransferResult, ClaimResult } from '../types/wallet';
+import { encryptClientBalance } from './crypto';
 import * as nacl from 'tweetnacl';
 
 const MU_FACTOR = 1_000_000;
@@ -53,6 +54,236 @@ export async function fetchBalance(address: string): Promise<BalanceResponse> {
   } catch (error) {
     console.error('Error fetching balance:', error);
     throw error;
+  }
+}
+
+export async function fetchEncryptedBalance(address: string, privateKey: string): Promise<EncryptedBalanceResponse | null> {
+  try {
+    const response = await fetch(`/api/view_encrypted_balance/${address}`, {
+      headers: {
+        'X-Private-Key': privateKey
+      }
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    return {
+      public: parseFloat(data.public_balance?.split(' ')[0] || '0'),
+      public_raw: parseInt(data.public_balance_raw || '0'),
+      encrypted: parseFloat(data.encrypted_balance?.split(' ')[0] || '0'),
+      encrypted_raw: parseInt(data.encrypted_balance_raw || '0'),
+      total: parseFloat(data.total_balance?.split(' ')[0] || '0')
+    };
+  } catch (error) {
+    console.error('Error fetching encrypted balance:', error);
+    return null;
+  }
+}
+
+export async function encryptBalance(address: string, amount: number, privateKey: string): Promise<{ success: boolean; tx_hash?: string; error?: string }> {
+  try {
+    const encData = await fetchEncryptedBalance(address, privateKey);
+    if (!encData) {
+      return { success: false, error: "Cannot get balance" };
+    }
+    
+    const currentEncryptedRaw = encData.encrypted_raw;
+    const newEncryptedRaw = currentEncryptedRaw + Math.floor(amount * MU_FACTOR);
+    
+    const encryptedValue = await encryptClientBalance(newEncryptedRaw, privateKey);
+    
+    const data = {
+      address,
+      amount: Math.floor(amount * MU_FACTOR).toString(),
+      private_key: privateKey,
+      encrypted_data: encryptedValue
+    };
+    
+    const response = await fetch('/api/encrypt_balance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      return { success: true, tx_hash: result.tx_hash };
+    } else {
+      const error = await response.text();
+      return { success: false, error };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function decryptBalance(address: string, amount: number, privateKey: string): Promise<{ success: boolean; tx_hash?: string; error?: string }> {
+  try {
+    const encData = await fetchEncryptedBalance(address, privateKey);
+    if (!encData) {
+      return { success: false, error: "Cannot get balance" };
+    }
+    
+    const currentEncryptedRaw = encData.encrypted_raw;
+    if (currentEncryptedRaw < Math.floor(amount * MU_FACTOR)) {
+      return { success: false, error: "Insufficient encrypted balance" };
+    }
+    
+    const newEncryptedRaw = currentEncryptedRaw - Math.floor(amount * MU_FACTOR);
+    
+    const encryptedValue = await encryptClientBalance(newEncryptedRaw, privateKey);
+    
+    const data = {
+      address,
+      amount: Math.floor(amount * MU_FACTOR).toString(),
+      private_key: privateKey,
+      encrypted_data: encryptedValue
+    };
+    
+    const response = await fetch('/api/decrypt_balance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      return { success: true, tx_hash: result.tx_hash };
+    } else {
+      const error = await response.text();
+      return { success: false, error };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function getAddressInfo(address: string): Promise<any> {
+  try {
+    const response = await fetch(`/api/address/${address}`);
+    if (response.ok) {
+      return await response.json();
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching address info:', error);
+    return null;
+  }
+}
+
+export async function getPublicKey(address: string): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/public_key/${address}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.public_key;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching public key:', error);
+    return null;
+  }
+}
+
+export async function createPrivateTransfer(fromAddress: string, toAddress: string, amount: number, fromPrivateKey: string): Promise<PrivateTransferResult> {
+  try {
+    const addressInfo = await getAddressInfo(toAddress);
+    if (!addressInfo || !addressInfo.has_public_key) {
+      return { success: false, error: "Recipient has no public key" };
+    }
+    
+    const toPublicKey = await getPublicKey(toAddress);
+    if (!toPublicKey) {
+      return { success: false, error: "Cannot get recipient public key" };
+    }
+    
+    const data = {
+      from: fromAddress,
+      to: toAddress,
+      amount: Math.floor(amount * MU_FACTOR).toString(),
+      from_private_key: fromPrivateKey,
+      to_public_key: toPublicKey
+    };
+    
+    const response = await fetch('/api/private_transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      return {
+        success: true,
+        tx_hash: result.tx_hash,
+        ephemeral_key: result.ephemeral_key
+      };
+    } else {
+      const error = await response.text();
+      return { success: false, error };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function getPendingPrivateTransfers(address: string, privateKey: string): Promise<PendingPrivateTransfer[]> {
+  try {
+    const response = await fetch(`/api/pending_private_transfers?address=${address}`, {
+      headers: {
+        'X-Private-Key': privateKey
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.pending_transfers || [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching pending private transfers:', error);
+    return [];
+  }
+}
+
+export async function claimPrivateTransfer(recipientAddress: string, privateKey: string, transferId: string): Promise<ClaimResult> {
+  try {
+    const data = {
+      recipient_address: recipientAddress,
+      private_key: privateKey,
+      transfer_id: transferId
+    };
+    
+    const response = await fetch('/api/claim_private_transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      return {
+        success: true,
+        amount: result.amount
+      };
+    } else {
+      const error = await response.text();
+      return { success: false, error };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

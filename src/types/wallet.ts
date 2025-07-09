@@ -39,6 +39,14 @@ export interface BalanceResponse {
   nonce: number;
 }
 
+export interface EncryptedBalanceResponse {
+  public: number;
+  public_raw: number;
+  encrypted: number;
+  encrypted_raw: number;
+  total: number;
+}
+
 export interface Transaction {
   from: string;
   to_: string;
@@ -49,6 +57,8 @@ export interface Transaction {
   message?: string;
   signature?: string;
   public_key?: string;
+  op_type?: string;
+  encrypted_data?: string;
 }
 
 export interface AddressHistoryResponse {
@@ -103,4 +113,28 @@ export interface StagingResponse {
   count: number;
   staged_transactions: PendingTransaction[];
   message: string;
+}
+
+// New interfaces for private transfers
+export interface PendingPrivateTransfer {
+  id: string;
+  sender: string;
+  recipient: string;
+  encrypted_data: string;
+  ephemeral_key: string;
+  epoch_id: number;
+  created_at: string;
+}
+
+export interface PrivateTransferResult {
+  success: boolean;
+  tx_hash?: string;
+  ephemeral_key?: string;
+  error?: string;
+}
+
+export interface ClaimResult {
+  success: boolean;
+  amount?: string;
+  error?: string;
 }

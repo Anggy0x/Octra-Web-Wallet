@@ -10,11 +10,15 @@ import {
   History, 
   LogOut,
   Copy,
-  PieChart
+  PieChart,
+  Shield,
+  Gift
 } from 'lucide-react';
 import { Balance } from './Balance';
 import { MultiSend } from './MultiSend';
 import { SendTransaction } from './SendTransaction';
+import { PrivateTransfer } from './PrivateTransfer';
+import { ClaimTransfers } from './ClaimTransfers';
 import { TxHistory } from './TxHistory';
 import { ThemeToggle } from './ThemeToggle';
 import { Wallet } from '../types/wallet';
@@ -226,7 +230,7 @@ export function WalletDashboard({ wallet, onDisconnect }: WalletDashboardProps) 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <PieChart className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -234,6 +238,14 @@ export function WalletDashboard({ wallet, onDisconnect }: WalletDashboardProps) 
             <TabsTrigger value="send" className="flex items-center gap-2">
               <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Send</span>
+            </TabsTrigger>
+            <TabsTrigger value="private" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Private</span>
+            </TabsTrigger>
+            <TabsTrigger value="claim" className="flex items-center gap-2">
+              <Gift className="h-4 w-4" />
+              <span className="hidden sm:inline">Claim</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <History className="h-4 w-4" />
@@ -269,6 +281,20 @@ export function WalletDashboard({ wallet, onDisconnect }: WalletDashboardProps) 
                 onTransactionSuccess={handleTransactionSuccess}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="private">
+            <PrivateTransfer
+              wallet={wallet}
+              onTransactionSuccess={handleTransactionSuccess}
+            />
+          </TabsContent>
+
+          <TabsContent value="claim">
+            <ClaimTransfers
+              wallet={wallet}
+              onTransactionSuccess={handleTransactionSuccess}
+            />
           </TabsContent>
 
           <TabsContent value="history">
