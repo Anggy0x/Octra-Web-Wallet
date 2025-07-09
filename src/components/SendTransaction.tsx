@@ -378,7 +378,7 @@ export function SendTransaction({ wallet, balance, nonce, onBalanceUpdate, onNon
             !validateAddress(recipientAddress) || 
             !validateAmount(amount) || 
             totalCost > currentBalance ||
-            (message && message.length > 1024)
+            Boolean(message && message.length > 1024)
           }
           className="w-full"
           size="lg"
