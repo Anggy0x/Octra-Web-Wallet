@@ -242,10 +242,12 @@ export function PrivateTransfer({ wallet, onTransactionSuccess }: PrivateTransfe
       </CardHeader>
       <CardContent className="space-y-6">
         <Alert>
-          <Shield className="h-4 w-4" />
-          <AlertDescription>
-            Private transfers use your encrypted balance and are completely anonymous. The recipient can claim the transfer in the next epoch.
-          </AlertDescription>
+          <div className="flex items-start space-x-3">
+            <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <AlertDescription>
+              Private transfers use your encrypted balance and are completely anonymous. The recipient can claim the transfer in the next epoch.
+            </AlertDescription>
+          </div>
         </Alert>
 
         {/* Encrypted Balance Display */}

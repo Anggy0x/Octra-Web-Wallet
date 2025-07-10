@@ -96,10 +96,12 @@ export function Balance({ wallet, balance, onBalanceUpdate, isLoading = false }:
   if (!wallet) {
     return (
       <Alert>
-        <Wallet className="h-4 w-4" />
-        <AlertDescription>
-          No wallet available. Please generate or import a wallet first.
-        </AlertDescription>
+        <div className="flex items-start space-x-3">
+          <Wallet className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <AlertDescription>
+            No wallet available. Please generate or import a wallet first.
+          </AlertDescription>
+        </div>
       </Alert>
     );
   }

@@ -176,10 +176,12 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
   if (!wallet) {
     return (
       <Alert>
-        <WalletIcon className="h-4 w-4" />
-        <AlertDescription>
-          No wallet available. Please generate or import a wallet first.
-        </AlertDescription>
+        <div className="flex items-start space-x-3">
+          <WalletIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <AlertDescription>
+            No wallet available. Please generate or import a wallet first.
+          </AlertDescription>
+        </div>
       </Alert>
     );
   }

@@ -163,10 +163,12 @@ export function ClaimTransfers({ wallet, onTransactionSuccess }: ClaimTransfersP
           </div>
         ) : transfers.length === 0 ? (
           <Alert>
-            <Gift className="h-4 w-4" />
-            <AlertDescription>
-              No pending private transfers found. When someone sends you a private transfer, it will appear here for claiming.
-            </AlertDescription>
+            <div className="flex items-start space-x-3">
+              <Gift className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <AlertDescription>
+                No pending private transfers found. When someone sends you a private transfer, it will appear here for claiming.
+              </AlertDescription>
+            </div>
           </Alert>
         ) : (
           <div className="space-y-4">
