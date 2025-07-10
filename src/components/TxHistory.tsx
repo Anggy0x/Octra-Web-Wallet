@@ -319,12 +319,13 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                                       {(() => {
                                         const isPrivateTransfer = selectedTx.message === 'PRIVATE_TRANSFER' || 
                                                                  selectedTx.message === '505249564154455f5452414e53464552' ||
-                                                                 (selectedTx.amount === '0' && selectedTx.message);
+                                                                 (selectedTx.amount === '0' && selectedTx.message) ||
+                                                                 selectedTx.amount === '0';
                                         
                                         if (isPrivateTransfer) {
                                           return (
                                             <div className="flex items-center gap-1">
-                                              <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                              <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                               <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
                                             </div>
                                           );
@@ -409,12 +410,13 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                                       {(() => {
                                         const isPrivateTransfer = selectedTx.parsed_tx.message === 'PRIVATE_TRANSFER' || 
                                                                  selectedTx.parsed_tx.message === '505249564154455f5452414e53464552' ||
-                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message);
+                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message) ||
+                                                                 selectedTx.parsed_tx.amount === '0';
                                         
                                         if (isPrivateTransfer) {
                                           return (
                                             <div className="flex items-center gap-1">
-                                              <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                              <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                               <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
                                             </div>
                                           );
@@ -430,12 +432,13 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                                       {(() => {
                                         const isPrivateTransfer = selectedTx.parsed_tx.message === 'PRIVATE_TRANSFER' || 
                                                                  selectedTx.parsed_tx.message === '505249564154455f5452414e53464552' ||
-                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message);
+                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message) ||
+                                                                 selectedTx.parsed_tx.amount === '0';
                                         
                                         if (isPrivateTransfer) {
                                           return (
                                             <div className="flex items-center gap-1">
-                                              <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                              <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                               <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
                                             </div>
                                           );
@@ -515,12 +518,13 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                             // Check if this is a private transfer
                             const isPrivateTransfer = tx.message === 'PRIVATE_TRANSFER' || 
                                                      tx.message === '505249564154455f5452414e53464552' || // hex encoded PRIVATE_TRANSFER
-                                                     (tx.amount === 0 && tx.message);
+                                                     (tx.amount === 0 && tx.message) ||
+                                                     tx.amount === 0; // Also check for 0 amount transactions
                             
                             if (isPrivateTransfer) {
                               return (
                                 <div className="flex items-center gap-1">
-                                  <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                  <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                   <span className="text-purple-600 dark:text-purple-400">private OCT</span>
                                 </div>
                               );
