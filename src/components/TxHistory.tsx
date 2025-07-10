@@ -323,10 +323,10 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                                         
                                         if (isPrivateTransfer) {
                                           return (
-                                            <>
-                                              <span className="text-purple-600 dark:text-purple-400 font-medium">Private</span>
+                                            <div className="flex items-center gap-1">
                                               <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                                            </>
+                                              <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
+                                            </div>
                                           );
                                         }
                                         
@@ -405,11 +405,45 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                                   </div>
                                   <div>
                                     <span className="font-medium">Amount:</span>
-                                    <div>{selectedTx.parsed_tx.amount} OCT</div>
+                                    <div className="flex items-center gap-2">
+                                      {(() => {
+                                        const isPrivateTransfer = selectedTx.parsed_tx.message === 'PRIVATE_TRANSFER' || 
+                                                                 selectedTx.parsed_tx.message === '505249564154455f5452414e53464552' ||
+                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message);
+                                        
+                                        if (isPrivateTransfer) {
+                                          return (
+                                            <div className="flex items-center gap-1">
+                                              <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                              <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return `${selectedTx.parsed_tx.amount} OCT`;
+                                      })()}
+                                    </div>
                                   </div>
                                   <div>
                                     <span className="font-medium">Amount Raw:</span>
-                                    <div>{selectedTx.parsed_tx.amount_raw}</div>
+                                    <div className="flex items-center gap-2">
+                                      {(() => {
+                                        const isPrivateTransfer = selectedTx.parsed_tx.message === 'PRIVATE_TRANSFER' || 
+                                                                 selectedTx.parsed_tx.message === '505249564154455f5452414e53464552' ||
+                                                                 (selectedTx.parsed_tx.amount === '0' && selectedTx.parsed_tx.message);
+                                        
+                                        if (isPrivateTransfer) {
+                                          return (
+                                            <div className="flex items-center gap-1">
+                                              <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                              <span className="text-purple-600 dark:text-purple-400 font-medium">private OCT</span>
+                                            </div>
+                                          );
+                                        }
+                                        
+                                        return selectedTx.parsed_tx.amount_raw;
+                                      })()}
+                                    </div>
                                   </div>
                                   <div>
                                     <span className="font-medium">Nonce:</span>
@@ -485,10 +519,10 @@ export function TxHistory({ wallet, transactions, onTransactionsUpdate, isLoadin
                             
                             if (isPrivateTransfer) {
                               return (
-                                <>
-                                  <span className="text-purple-600 dark:text-purple-400">Private</span>
+                                <div className="flex items-center gap-1">
                                   <Shield className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                                </>
+                                  <span className="text-purple-600 dark:text-purple-400">private OCT</span>
+                                </div>
                               );
                             }
                             
